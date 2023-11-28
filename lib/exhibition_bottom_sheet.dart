@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:parallax_slide_animation/home_page.dart';
 
 const double minHeight = 120;
 const double iconStartSize = 44;
@@ -11,156 +12,8 @@ const double iconEndMarginTop = 80;
 const double iconsVerticalSpacing = 24;
 const double iconsHorizontalSpacing = 16;
 
-class ExhibitionBottomSheet extends StatefulWidget {
-  const ExhibitionBottomSheet({Key? key});
 
-  @override
-  _ExhibitionBottomSheetState createState() => _ExhibitionBottomSheetState();
-}
 
-class _ExhibitionBottomSheetState extends State<ExhibitionBottomSheet>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  double get maxHeight => MediaQuery.of(context).size.height * 1.5;
-
-  double get headerTopMargin =>
-      lerp(20, 20 + MediaQuery.of(context).padding.top);
-
-  double get headerFontSize => lerp(14, 24);
-
-  double get itemBorderRadius => lerp(8, 24);
-
-  double get iconLeftBorderRadius => itemBorderRadius;
-
-  double get iconRightBorderRadius => lerp(8, 0);
-
-  double get iconSize => lerp(iconStartSize, iconEndSize);
-
-  double iconTopMargin(int index) =>
-      lerp(iconStartMarginTop,
-          iconEndMarginTop + index * (iconsVerticalSpacing + iconEndSize)) +
-      headerTopMargin;
-
-  double iconLeftMargin(int index) =>
-      lerp(index * (iconsHorizontalSpacing + iconStartSize), 0);
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  double lerp(double min, double max) =>
-      lerpDouble(min, max, _controller.value) ?? min;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Positioned(
-          height: lerp(minHeight, maxHeight),
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: GestureDetector(
-            onTap: _toggle,
-            onVerticalDragUpdate: _handleDragUpdate,
-            onVerticalDragEnd: _handleDragEnd,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              decoration: const BoxDecoration(
-                color: Color(0xFF162A49),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-              ),
-              child: Stack(
-                children: <Widget>[
-                  const MenuButton(),
-                  if (_controller.status == AnimationStatus.completed)
-                    SheetHeader(
-                      fontSize: headerFontSize,
-                      topMargin: headerTopMargin,
-                    ),
-                  for (Event event in events)
-                    if (_controller.status == AnimationStatus.completed)
-                      _buildFullItem(event),
-                  for (Event event in events) _buildIcon(event),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildIcon(Event event) {
-    int index = events.indexOf(event);
-    return Positioned(
-      height: iconSize,
-      width: iconSize,
-      top: iconTopMargin(index),
-      left: iconLeftMargin(index),
-      child: ClipRRect(
-        borderRadius: BorderRadius.horizontal(
-          left: Radius.circular(iconLeftBorderRadius),
-          right: Radius.circular(iconRightBorderRadius),
-        ),
-        child: Image.asset(
-          'assets/${event.assetName}',
-          fit: BoxFit.cover,
-          alignment: Alignment(lerp(1, 0), 0),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFullItem(Event event) {
-    int index = events.indexOf(event);
-    return ExpandedEventItem(
-      topMargin: iconTopMargin(index),
-      leftMargin: iconLeftMargin(index),
-      height: iconSize,
-      isVisible: _controller.status == AnimationStatus.completed,
-      borderRadius: itemBorderRadius,
-      title: event.title,
-      date: event.date,
-    );
-  }
-
-  void _toggle() {
-    final bool isOpen = _controller.status == AnimationStatus.completed;
-    _controller.fling(velocity: isOpen ? -2 : 2);
-  }
-
-  void _handleDragUpdate(DragUpdateDetails details) {
-    _controller.value -= details.primaryDelta! / maxHeight;
-  }
-
-  void _handleDragEnd(DragEndDetails details) {
-    if (_controller.isAnimating ||
-        _controller.status == AnimationStatus.completed) return;
-
-    final double flingVelocity =
-        details.velocity.pixelsPerSecond.dy / maxHeight;
-    if (flingVelocity < 0.0) {
-      _controller.fling(velocity: math.max(2.0, -flingVelocity));
-    } else if (flingVelocity > 0.0)
-      _controller.fling(velocity: math.min(-2.0, -flingVelocity));
-    else
-      _controller.fling(velocity: _controller.value < 0.5 ? -2.0 : 2.0);
-  }
-}
 
 class ExpandedEventItem extends StatelessWidget {
   final double topMargin;
@@ -245,11 +98,7 @@ class ExpandedEventItem extends StatelessWidget {
   }
 }
 
-final List<Event> events = [
-  Event('steve-johnson.jpeg', 'Shenzhen GLOBAL DESIGN AWARD 2018', '4.20-30'),
-  Event('efe-kurnaz.jpg', 'Shenzhen GLOBAL DESIGN AWARD 2018', '4.20-30'),
-  Event('rodion-kutsaev.jpeg', 'Dawan District Guangdong Hong Kong', '4.28-31'),
-];
+
 
 class Event {
   final String assetName;
@@ -294,6 +143,80 @@ class MenuButton extends StatelessWidget {
         Icons.menu,
         color: Colors.white,
         size: 28,
+      ),
+    );
+  }
+}
+
+class BottomNavigationBarCustom extends StatelessWidget {
+  final int currentIndex;
+  final Function(int) onTap;
+
+  const BottomNavigationBarCustom({
+    Key? key,
+    required this.currentIndex,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomNavigationBar(
+      currentIndex: currentIndex,
+      onTap: onTap,
+      items: const [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.search),
+          label: 'Search',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.favorite),
+          label: 'Favorites',
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.settings),
+          label: 'Settings',
+        ),
+      ],
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key});
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _currentIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(height: 8),
+            Header(),
+            SizedBox(height: 40),
+            // ... (otras secciones)
+          ],
+        ),
+      ),
+      bottomNavigationBar: BottomNavigationBarCustom(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
       ),
     );
   }

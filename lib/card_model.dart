@@ -6,12 +6,12 @@ class CardModel {
 
 List<CardModel> demoCardData = [
   CardModel(
-    name: "Shenzhen GLOBAL DESIGN AWARD 2018",
+    name: "Normando Puro",
     image: "vaca1.jpg",
     date: "4.20-30",
   ),
   CardModel(
-    name: "Dawan District, Guangdong Hong Kong and Macao",
+    name: "Normando puro",
     image: "vaca1.jpg",
     date: "4.28-31",
   ),
